@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Day Trader</string>
+    <string name="addBtnLbl">Add Stock</string>
+    <string name="dlBtnLbl">Download Stock Data</string>
+</resources>
