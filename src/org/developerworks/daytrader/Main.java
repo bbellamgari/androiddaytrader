@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.http.Header;
@@ -18,6 +19,7 @@ import org.json.JSONObject;
 import org.xml.sax.ContentHandler;
 
 import android.app.ListActivity;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.sax.Element;
@@ -26,6 +28,7 @@ import android.sax.EndTextElementListener;
 import android.sax.RootElement;
 import android.util.Log;
 import android.util.Xml;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -34,6 +37,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 import static android.view.Menu.NONE;
 
 public class Main extends ListActivity {
@@ -43,14 +47,24 @@ public class Main extends ListActivity {
 	private static final int PROTOBUF = 2;
 	private int mode = XML; // default
 	
+	private Vector<Stock> recentStocks;
+	private MyCursorAdapter myAdapter;
+	private MyDbAdapter mDbHelper;
+	private Cursor mainC;
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        
         setContentView(R.layout.main);
         final EditText input = (EditText) findViewById(R.id.symbol);
         final TextView symbolsList = (TextView) findViewById(R.id.symList);
         final Button addButton = (Button) findViewById(R.id.addBtn);
         final Button dlButton = (Button) findViewById(R.id.dlBtn);
+        //added buttons
+        final Button refreshButton = (Button) findViewById(R.id.refreshBtn);
+        final Button recentButton = (Button) findViewById(R.id.localBtn);
         addButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
 				String newSymbol = input.getText().toString();
@@ -84,7 +98,41 @@ public class Main extends ListActivity {
 				}
 			}
         });
+    
+        refreshButton.setOnClickListener(new OnClickListener(){
+			public void onClick(View v) {
+				//TODO refresh (download current from server)
+				String[] s1 = { "dasd", "fdsfs", "rewrwet" };
+
+				ArrayAdapter<String> adapter = 
+					new ArrayAdapter<String>(Main.this, R.layout.stock, s1 );
+				setListAdapter(adapter);
+			}
+        });
+        recentButton.setOnClickListener(new OnClickListener(){
+			public void onClick(View v) {
+				//TODO recent (get from DB)
+				Toast toast = Toast.makeText(getApplicationContext(), 
+						"Recent Click", Toast.LENGTH_SHORT);
+				toast.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL,0, 0);
+				toast.show();
+				
+				mainC = mDbHelper.fetchAllData();
+				//Cursor cr=null;
+				myAdapter=new MyCursorAdapter(Main.this, mainC);
+				setListAdapter(myAdapter);
+				//myAdapter.notifyDataSetChanged();
+		        
+			}
+        });
+        
+        mDbHelper = new MyDbAdapter(this);
+        mDbHelper.open();
+        
+        mDbHelper.createStackRow("rak", "abcd","21");   
+        mDbHelper.createStackRow("qqq", "wwwwww","33");   
     }
+
     
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -130,6 +178,7 @@ public class Main extends ListActivity {
 		
 		@Override
 		protected void onPostExecute(Stock[] stocks){
+			//for(int)
 			ArrayAdapter<Stock> adapter = 
 				new ArrayAdapter<Stock>(Main.this, R.layout.stock, stocks );
 			setListAdapter(adapter);
