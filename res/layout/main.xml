@@ -22,6 +22,14 @@
     		android:layout_height="wrap_content" 
     		android:text="@string/dlBtnLbl"
     	/>
+    	<Button android:id="@+id/refreshBtn" android:layout_width="wrap_content" 
+    		android:layout_height="wrap_content" 
+    		android:text="@string/refreshBtnLbl"
+    	/>
+    	<Button android:id="@+id/localBtn" android:layout_width="wrap_content" 
+    		android:layout_height="wrap_content" 
+    		android:text="@string/localBtnLbl"
+    	/>
    	</LinearLayout>
     <ListView android:id="@android:id/list" 
     	android:layout_height="fill_parent" android:layout_width="fill_parent"
