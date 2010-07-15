@@ -2,5 +2,7 @@
 <resources>
     <string name="app_name">Day Trader</string>
     <string name="addBtnLbl">Add Stock</string>
-    <string name="dlBtnLbl">Download Stock Data</string>
+    <string name="dlBtnLbl">Download</string>
+	<string name="refreshBtnLbl">Refresh</string>
+	<string name="localBtnLbl">Recent</string>
 </resources>
