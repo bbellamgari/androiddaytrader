@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.http.Header;
@@ -19,7 +18,11 @@ import org.json.JSONObject;
 import org.xml.sax.ContentHandler;
 
 import android.app.ListActivity;
+import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.sax.Element;
@@ -33,7 +36,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -47,16 +49,14 @@ public class Main extends ListActivity {
 	private static final int PROTOBUF = 2;
 	private int mode = XML; // default
 	
-	private Vector<Stock> recentStocks;
+	private boolean hasRecent;
 	private MyCursorAdapter myAdapter;
 	private MyDbAdapter mDbHelper;
-	private Cursor mainC;
+	private Cursor mainCursor;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        
         setContentView(R.layout.main);
         final EditText input = (EditText) findViewById(R.id.symbol);
         final TextView symbolsList = (TextView) findViewById(R.id.symList);
@@ -82,57 +82,121 @@ public class Main extends ListActivity {
         });
         dlButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
+				if(!isConnectedToNetwork()){
+					showMyToast("Not connected to network.");
+					return;
+				}
 				String symList = symbolsList.getText().toString();
+				if(symList.length()==0){
+					showMyToast("No data specified.");
+					return;
+				}
 				String[] symbols = symList.split(",");
 				symbolsList.setText("");
-				switch (mode){
-				case JSON :
-					new StockJsonParser().execute(symbols);
-					break;
-				case PROTOBUF :
-					new StockProtoBufParser().execute(symbols);
-					break;
-				default :
-					new StockXmlParser().execute(symbols);
-					break;
-				}
+				mDbHelper.deleteAllData();
+				hasRecent=true;
+				orderStock(symbols);
+				
 			}
         });
     
         refreshButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
-				//TODO refresh (download current from server)
-				String[] s1 = { "dasd", "fdsfs", "rewrwet" };
-
-				ArrayAdapter<String> adapter = 
-					new ArrayAdapter<String>(Main.this, R.layout.stock, s1 );
-				setListAdapter(adapter);
+				if(!hasRecent){
+					showMyToast("No data to refresh.");
+					return;
+				}
+				if(!isConnectedToNetwork()){
+					showMyToast("Not connected to network.");
+					return;
+				}
+				refreshDatabaseInfo();
 			}
         });
         recentButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
-				//TODO recent (get from DB)
-				Toast toast = Toast.makeText(getApplicationContext(), 
-						"Recent Click", Toast.LENGTH_SHORT);
-				toast.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL,0, 0);
-				toast.show();
-				
-				mainC = mDbHelper.fetchAllData();
-				//Cursor cr=null;
-				myAdapter=new MyCursorAdapter(Main.this, mainC);
-				setListAdapter(myAdapter);
-				//myAdapter.notifyDataSetChanged();
-		        
+				hasRecent=true;
+				refreshView();
 			}
         });
         
-        mDbHelper = new MyDbAdapter(this);
-        mDbHelper.open();
-        
-        mDbHelper.createStackRow("rak", "abcd","21");   
-        mDbHelper.createStackRow("qqq", "wwwwww","33");   
-    }
+        //initialization of my variables
+        hasRecent=false;  //no recent data to update
+        try{
+	        mDbHelper = new MyDbAdapter(this);
+	        mDbHelper.open();
+        }
+        catch(SQLException e){
+        	showMyToast("SQL error");
+        }
 
+        mainCursor = mDbHelper.fetchAllData();
+		myAdapter=new MyCursorAdapter(Main.this, null); //empty adapter
+		setListAdapter(myAdapter);
+		
+    }//onCreate
+
+    private void showMyToast(String text){
+    	Toast toast = Toast.makeText(getApplicationContext(), 
+				text, Toast.LENGTH_SHORT);
+		toast.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL,0, 0);
+		toast.show();
+    }
+    
+    private void orderStock(String[] symbols){
+    	switch (mode){
+		case JSON :
+			new StockJsonParser().execute(symbols);
+			break;
+		case PROTOBUF :
+			new StockProtoBufParser().execute(symbols);
+			break;
+		default :
+			new StockXmlParser().execute(symbols);
+			break;
+		}
+    }
+    
+    private void refreshView(){
+    	mainCursor = mDbHelper.fetchAllData();
+		myAdapter.changeCursor(mainCursor);
+		myAdapter.notifyDataSetChanged();
+    }
+    
+    private boolean isConnectedToNetwork(){
+    	final ConnectivityManager man;
+    	final NetworkInfo wifiInfo;
+    	final NetworkInfo mobileInfo;
+    	
+    	man = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        wifiInfo = man.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        mobileInfo = man.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+        
+        if(wifiInfo.isConnected() || mobileInfo.isConnected()){
+        	return true;
+        }
+        else{
+        	return false;
+        }
+    }
+    
+    private void refreshDatabaseInfo(){
+    	Cursor cr=mDbHelper.fetchAllData();
+    	ArrayList<String> arr = new ArrayList<String>();
+    	cr.moveToNext(); //wskazuje na pierwszy element
+    	do{
+    		arr.add(cr.getString(1)); //kolumna 1 to tag (bo 0 to id)
+    		cr.moveToNext();
+    	}while(!cr.isAfterLast());
+    	String[] symbols = new String[arr.size()];
+    	symbols=arr.toArray(symbols);
+    	mDbHelper.deleteAllData();
+    	orderStock(symbols);
+    	
+    	
+    	//Stock[] array = new Stock[symbols.length];
+		//return stocks.toArray(array);
+    }
     
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -178,10 +242,17 @@ public class Main extends ListActivity {
 		
 		@Override
 		protected void onPostExecute(Stock[] stocks){
-			//for(int)
-			ArrayAdapter<Stock> adapter = 
-				new ArrayAdapter<Stock>(Main.this, R.layout.stock, stocks );
-			setListAdapter(adapter);
+			try{
+				for(int i=0;i<stocks.length;++i){
+					//add stock to DB
+					mDbHelper.createStackRow(stocks[i].getSymbol(), 
+							stocks[i].getName(), ""+stocks[i].getPrice());
+				}
+				refreshView();
+			}
+			catch(SQLException ex){
+				showMyToast("Can't add rows to database.");
+			}
 		}	
 	}
 

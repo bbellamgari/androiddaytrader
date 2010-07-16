@@ -10,15 +10,11 @@ import android.widget.TextView;
 
 public class MyCursorAdapter extends CursorAdapter{
 	
-		//private Cursor mCursor;
-		//private Context mContext;
 		private final LayoutInflater mInflater;
 	
 		public MyCursorAdapter(Context context, Cursor c) {
 			super(context, c, true);
 		      mInflater = LayoutInflater.from(context);
-		      //mContext = context;
-
 		}
 	 
 		@Override
@@ -32,20 +28,12 @@ public class MyCursorAdapter extends CursorAdapter{
 					cursor.getColumnIndex(MyDbAdapter.KEY_NAME)));
 			price.setText(cursor.getString(
 					cursor.getColumnIndex(MyDbAdapter.KEY_PRICE)));
-			
-			
-			//summary.setText(cursor.getString(
-			//		cursor.getColumnIndex(ExampleDB.KEY_EXAMPLE_SUMMARY)));
 		}
 	 
 		@Override
 		public View newView(Context context, Cursor cursor, ViewGroup parent) {
 			final View view = mInflater.inflate(R.layout.stockline, parent, false);
 		      return view;
-			/*LayoutInflater inflater = LayoutInflater.from(context);
-			View v = inflater.inflate(R.layout.stock, parent, false);
-			bindView(v, context, cursor);
-			return v;*/
 		}
 
 		
