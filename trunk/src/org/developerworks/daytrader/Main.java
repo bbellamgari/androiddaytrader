@@ -82,13 +82,13 @@ public class Main extends ListActivity {
         });
         dlButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
-				if(!isConnectedToNetwork()){
-					showMyToast("Not connected to network.");
-					return;
-				}
 				String symList = symbolsList.getText().toString();
 				if(symList.length()==0){
 					showMyToast("No data specified.");
+					return;
+				}
+				if(!isConnectedToNetwork()){
+					showMyToast("Not connected to network.");
 					return;
 				}
 				String[] symbols = symList.split(",");
@@ -115,6 +115,9 @@ public class Main extends ListActivity {
         });
         recentButton.setOnClickListener(new OnClickListener(){
 			public void onClick(View v) {
+				if(hasRecent){
+					showMyToast("Local data is the same as shown - use refresh.");
+				}
 				hasRecent=true;
 				refreshView();
 			}
@@ -183,19 +186,15 @@ public class Main extends ListActivity {
     private void refreshDatabaseInfo(){
     	Cursor cr=mDbHelper.fetchAllData();
     	ArrayList<String> arr = new ArrayList<String>();
-    	cr.moveToNext(); //wskazuje na pierwszy element
+    	cr.moveToNext(); //now it points at first row
     	do{
-    		arr.add(cr.getString(1)); //kolumna 1 to tag (bo 0 to id)
+    		arr.add(cr.getString(1)); //column 1 is tag (col 0 is id)
     		cr.moveToNext();
     	}while(!cr.isAfterLast());
     	String[] symbols = new String[arr.size()];
     	symbols=arr.toArray(symbols);
     	mDbHelper.deleteAllData();
     	orderStock(symbols);
-    	
-    	
-    	//Stock[] array = new Stock[symbols.length];
-		//return stocks.toArray(array);
     }
     
     @Override
@@ -243,10 +242,18 @@ public class Main extends ListActivity {
 		@Override
 		protected void onPostExecute(Stock[] stocks){
 			try{
+				boolean isSymbolError=false;
 				for(int i=0;i<stocks.length;++i){
+					if(stocks[i]==null){
+						isSymbolError=true;
+						continue;
+					}
 					//add stock to DB
 					mDbHelper.createStackRow(stocks[i].getSymbol(), 
 							stocks[i].getName(), ""+stocks[i].getPrice());
+				}
+				if(isSymbolError){
+					showMyToast("Some symbols were wrong.");
 				}
 				refreshView();
 			}
