@@ -23,7 +23,7 @@ public class MyDbAdapter {
         "create table stock (_id integer primary key autoincrement, "
         + "tag text not null, name text not null, price text not null);";
 
-    private static final String DATABASE_NAME = "data15";
+    private static final String DATABASE_NAME = "data16_07";
     private static final String DATABASE_TABLE = "stock";
     private static final int DATABASE_VERSION = 2;
 
@@ -64,30 +64,26 @@ public class MyDbAdapter {
         mDbHelper.close();
     }
 
-
-    public long createStackRow(String tag, String name, String price) {
+    public long createStackRow(String tag, String name, String price) throws SQLException{
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_TAG, tag);
         initialValues.put(KEY_NAME, name);
         initialValues.put(KEY_PRICE, price);
-        return mDb.insert(DATABASE_TABLE, null, initialValues);
-    }
-
-    public boolean deleteNote(long rowId) {
-        return mDb.delete(DATABASE_TABLE, KEY_ROWID + "=" + rowId, null) > 0;
+        return mDb.insertOrThrow(DATABASE_TABLE, null, initialValues);
     }
 
     public Cursor fetchAllData() {
-        return mDb.query(DATABASE_TABLE, new String[] {KEY_TAG, KEY_NAME,
+        return mDb.query(DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TAG, KEY_NAME,
                 KEY_PRICE}, null, null, null, null, null);
     }
 
-    public boolean updateStack(String tag, String name, String price) {
+    /*public boolean updateStack(String tag, String price) {
         ContentValues args = new ContentValues();
-        args.put(KEY_TAG, tag);
-        args.put(KEY_NAME, name);
         args.put(KEY_PRICE, price);
-
         return mDb.update(DATABASE_TABLE, args, KEY_TAG + "=" + tag, null) > 0;
+    }*/
+    
+    public boolean deleteAllData(){
+    	return mDb.delete(DATABASE_TABLE, null, null)>0;
     }
 }
