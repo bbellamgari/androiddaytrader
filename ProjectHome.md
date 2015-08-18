@@ -1,0 +1,1 @@
+This is an Android platform application, which uses web and yahoo! stocks to download and show user current stocks prices on his mobile phone with Android system.
